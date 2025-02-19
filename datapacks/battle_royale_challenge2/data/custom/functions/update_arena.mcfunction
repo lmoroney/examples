@@ -1,0 +1,1 @@
+# This can be empty if no arena modifications are needed 
