@@ -1,0 +1,30 @@
+# MyFirstLLMAgent
+
+A Minecraft agent that uses GPT-4 through OpenRouter API to make decisions and interact with the game environment.
+
+## Setup
+
+1. Create a `.env` file with your Kradle API key and OpenRouter API key:
+```
+KRADLE_API_KEY=your_key_here
+OPENROUTER_API_KEY=your_key_here
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Run the agent:
+```bash
+python agent.py
+```
+
+The agent will start on port 1500. You can customize the agent's namespace by modifying the `AGENT_SLUG` constant in `agent.py`.
+
+## Configuration
+
+- `PERSONA`: Define the agent's personality
+- `MODEL`: Select the LLM model (default: openai/gpt-4)
+- `RESPOND_WITH_CODE`: Toggle between command responses and JavaScript code execution
+- `DELAY_AFTER_ACTION`: Adjust action delay in milliseconds
