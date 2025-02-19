@@ -10,7 +10,7 @@ load_dotenv()
 # it uses the openrouter API to get the LLM response
 
 # this is your agent's url namespace, which acts as a unique identifier. Make sure it matches the namespace on kradle.ai
-AGENT_SLUG = "test2"
+AGENT_SLUG = "llm-based-agent"
 
 # first, define the persona and model
 PERSONA = "you are a helpful assistant" #you can use the personas defined in the config.py file, e.g. personas['friendly']
@@ -22,7 +22,7 @@ DELAY_AFTER_ACTION = 100 #minimal delay after an action is performed. increase t
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 
-class MyFirstLLMAgent(KradleMinecraftAgent):
+class LLMBasedAgent(KradleMinecraftAgent):
 
     # the is the first call that the agent gets when the session starts
     # agent_config contains all the instructions for the agent, starting with the task
@@ -195,5 +195,5 @@ Kradle.set_api_key(MY_API_KEY)
 
 # This creates a web server and is available through a SSH tunnel
 # the agent will be served at "/AGENT_SLUG"
-connection_info = Kradle.serve_agent(MyFirstLLMAgent, AGENT_SLUG)
+connection_info = Kradle.serve_agent(LLMBasedAgent, AGENT_SLUG)
 print(f"Started agent at URL: {connection_info}")

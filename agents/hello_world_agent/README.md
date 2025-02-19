@@ -1,4 +1,4 @@
-# MyFirstAgent
+# Hello World Agent
 
 A minimal Minecraft agent that responds to private messages with "Hello World!" in the game chat.
 

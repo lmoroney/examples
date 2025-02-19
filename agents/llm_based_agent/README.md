@@ -1,4 +1,4 @@
-# MyFirstLLMAgent
+# LLM Based Agent
 
 A Minecraft agent that uses GPT-4 through OpenRouter API to make decisions and interact with the game environment.
 

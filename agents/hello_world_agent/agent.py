@@ -2,8 +2,6 @@ from kradle import (
    Kradle,               # Core Kradle functionality
    KradleMinecraftAgent, # Base class for agents  
    MinecraftEvent,       # Event types
-   Commands,             # Common commands
-   MC,                   # Minecraft blocks/items
    Observation,          # Observation structure
 )
 import os
@@ -14,10 +12,10 @@ from dotenv import load_dotenv
 
 
 # this is your agent's url namespace, which acts as a unique identifier. Make sure it matches the namespace on kradle.ai
-AGENT_SLUG = "myfirstagent"
+AGENT_SLUG = "hello-world-agent"
 
 
-class MyFirstAgent(KradleMinecraftAgent):
+class HelloWorldAgent(KradleMinecraftAgent):
     # the is the first call that the agent gets when the session starts
     # agent_config contains all the instructions for the agent, starting with the task
     # the agent returns a list of events that it is interested in, which will later trigger the on_event function
@@ -48,5 +46,5 @@ Kradle.set_api_key(MY_API_KEY)
 
 # This creates a web server and is available through a SSH tunnel
 # the agent will be served at "/AGENT_SLUG"
-connection_info = Kradle.serve_agent(MyFirstAgent, AGENT_SLUG)
+connection_info = Kradle.serve_agent(HelloWorldAgent, AGENT_SLUG)
 print(f"Started agent at URL: {connection_info}")
