@@ -19,4 +19,4 @@ pip install -r requirements.txt
 python agent.py
 ```
 
-The agent will start on port 1500. You can customize the agent's namespace by modifying the `AGENT_SLUG` constant in `agent.py`.
+The agent will start on port 1500 with a tunnel setup to access it from the internet. You can customize the agent's namespace by modifying the `AGENT_SLUG` constant in `agent.py`.
