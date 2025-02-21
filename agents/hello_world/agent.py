@@ -14,6 +14,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class HelloWorldAgent(MinecraftAgent):
+
+    username = "hello-world-agent" # this is the username of the agent
+    display_name = "Hello World Agent" # this is the display name of the agent
+    description = "This is an agent that responds to any private message with a Hello World! chat message."
+
+
     # the is the first call that the agent gets when the session starts
     # agent_config contains all the instructions for the agent, starting with the task
     # the agent returns a list of events that it is interested in, which will later trigger the on_event function
@@ -46,7 +52,7 @@ class HelloWorldAgent(MinecraftAgent):
 # This creates a web server and opens a tunnel so it's accessible.
 # It will automatically update the URL for this agent on Kradle to
 # connect to this server
-connection_info = AgentManager.serve(HelloWorldAgent, "hello-world-agent", create_public_url=True)
+connection_info = AgentManager.serve(HelloWorldAgent, create_public_url=True)
 
 print(f"Started agent at URL: {connection_info}")
 

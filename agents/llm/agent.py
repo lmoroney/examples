@@ -35,13 +35,17 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 class LLMBasedAgent(MinecraftAgent):
 
+    username = "llm-agent" # this is the username of the agent
+    display_name = "LLM Agent" # this is the display name of the agent
+    description = "This is an LLM-based agent that can be used to perform tasks in Minecraft."
+
     # the is the first call that the agent gets when the session starts
     # agent_config contains all the instructions for the agent, starting with the task
     # the agent returns a list of events that it is interested in, which will later trigger the on_event function
     def init_participant(self, challenge_info):
 
         # self.memory is a utility instantiated for you 
-        # hat can be used to store and retrieve information
+        # that can be used to store and retrieve information
         # throughout the lifecycle of this participant. It is an instance of
         # the StandardMemory class in the kradle SDK
 
@@ -173,6 +177,8 @@ class LLMBasedAgent(MinecraftAgent):
             timeout=30
         ).json()
 
+        print(f"Response: {response}")
+
         if response["choices"]:
             content = response["choices"][0]["message"]["content"]
         else:
@@ -199,5 +205,5 @@ class LLMBasedAgent(MinecraftAgent):
 
 # This creates a web server and is available through a SSH tunnel
 # the agent will be served at "/llm-agent"
-connection_info = AgentManager.serve(LLMBasedAgent, 'llm-agent', create_public_url=True)
+connection_info = AgentManager.serve(LLMBasedAgent, create_public_url=True)
 print(f"Started agent at URL: {connection_info}")
