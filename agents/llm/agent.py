@@ -1,38 +1,56 @@
-from kradle import Kradle, KradleMinecraftAgent, MC, Commands, RedisMemory, StandardMemory, MinecraftEvent
-from prompts.config import conversing_prompt, coding_prompt, conversation_examples, coding_examples, creative_mode_prompt
-import os
-import requests
-from dotenv import load_dotenv
-
-load_dotenv()
-
 # this agent uses an LLM to decide what to do in a session
 # it uses the openrouter API to get the LLM response
 
-# this is your agent's url namespace, which acts as a unique identifier. Make sure it matches the namespace on kradle.ai
-AGENT_SLUG = "llm-based-agent"
+from kradle import (
+   AgentManager,
+   MinecraftAgent,
+)
+from kradle.models import MinecraftEvent
+from dotenv import load_dotenv
+import os
+import requests
+from prompts.config import (
+  conversing_prompt,
+  coding_prompt,
+  conversation_examples,
+  coding_examples,
+  creative_mode_prompt
+)
 
-# first, define the persona and model
-PERSONA = "you are a helpful assistant" #you can use the personas defined in the config.py file, e.g. personas['friendly']
-MODEL = "openai/gpt-4o" #refer to https://openrouter.ai/models for available models
-RESPOND_WITH_CODE = False #if set to true, the agent will respond with code. if set to false, the agent will respond with a command
-DELAY_AFTER_ACTION = 100 #minimal delay after an action is performed. increase this if the agent is too fast or if you want more time to see the agent's actions
+load_dotenv()
+
+
+# let's define a model and persona for our agent
+MODEL = "openai/gpt-4o" # refer to https://openrouter.ai/models for available models
+PERSONA = "you are a helpful assistant" # check out some other personas in prompts/config.py
+
+# plus some additional settings:
+
+RESPOND_WITH_CODE = False # set this to true to have the llm generate runnable code instead of regular commands
+DELAY_AFTER_ACTION = 100 # minimal delay after an action is performed. increase this if the agent is too fast or if you want more time to see the agent's actions
 
 # your openrouter API key
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 
-class LLMBasedAgent(KradleMinecraftAgent):
+class LLMBasedAgent(MinecraftAgent):
+
+    username = "llm-agent" # this is the username of the agent
+    display_name = "LLM Agent" # this is the display name of the agent
+    description = "This is an LLM-based agent that can be used to perform tasks in Minecraft."
 
     # the is the first call that the agent gets when the session starts
     # agent_config contains all the instructions for the agent, starting with the task
     # the agent returns a list of events that it is interested in, which will later trigger the on_event function
-    def initialize_agent(self, agent_config):
-        #define memory, standard memory is a good start
-        self.memory = StandardMemory()
+    def init_participant(self, challenge_info):
+
+        # self.memory is a utility instantiated for you 
+        # that can be used to store and retrieve information
+        # throughout the lifecycle of this participant. It is an instance of
+        # the StandardMemory class in the kradle SDK
 
         #set task
-        self.memory.task = agent_config.task
+        self.memory.task = challenge_info.task
 
         #set message lists
         self.memory.messages = []
@@ -41,12 +59,12 @@ class LLMBasedAgent(KradleMinecraftAgent):
         self.memory.chat_history = []
 
         #set agent modes (e.g. creative mode, self_preservation, etc)
-        self.memory.agent_modes = agent_config.agent_modes
+        self.memory.agent_modes = challenge_info.agent_modes
 
         #set action dictionary
         # here, we have commands and js_functions
-        self.memory.commands = agent_config.commands
-        self.memory.js_functions = agent_config.js_functions
+        self.memory.commands = challenge_info.commands
+        self.memory.js_functions = challenge_info.js_functions
 
         #set persona ad models
         self.memory.persona = PERSONA
@@ -58,33 +76,31 @@ class LLMBasedAgent(KradleMinecraftAgent):
         #minimal delay after an action is performed. increase this if the agent is too fast or if you want more time to see the agent's actions
         self.memory.DELAY_AFTER_ACTION = DELAY_AFTER_ACTION
 
-        print(f"Initializing agent for participant ID: {self.participant_id} with slug: {self.slug}")
+        print(f"Initializing agent for participant ID: {self.participant_id} with slug: {self.username}")
         print(f"Persona: {self.memory.persona}")
         print(f"Model: {self.memory.model}")
 
-         # logging the init call       
-        Kradle.create_log(
-            session_id=agent_config.session_id,
-            participant_id=agent_config.participant_id,
-            level="initialize_agent",
-            message= {
-            "persona": self.memory.persona,
-            "model": self.memory.model,
-            "respond_with_code": self.memory.RESPOND_WITH_CODE
-            }
-        )
+        # let's log the init call to kradle using the
+        # built in self.log() method from the MinecraftAgent class
+        # self.log(
+        #     {
+        #         "persona": self.memory.persona,
+        #         "model": self.memory.model,
+        #         "respond_with_code": self.memory.RESPOND_WITH_CODE
+        #     }
+        # )
     
         # Agent_config contains available_events
-        return [MinecraftEvent.MESSAGE, MinecraftEvent.COMMAND_EXECUTED]
+        return {'listenTo': [MinecraftEvent.MESSAGE, MinecraftEvent.COMMAND_EXECUTED]}
 
     # this function is called when an event occurs
     # the agent returns an action to be performed
-    def on_event(self, data):
-        state_summary = self.format_state_summary(data)
-        
+    def on_event(self, observation):
+        state_summary = self.format_state_summary(observation)
         print(f"\nState Summary:\n{state_summary}")
         print ("Task: ", self.memory.task)
-        response = self.get_llm_response(state_summary, data)
+
+        response = self.get_llm_response(state_summary, observation)
         print(f"Agent Response: {response}")
         print(f"Participant ID: {self.participant_id}")
         
@@ -157,8 +173,11 @@ class LLMBasedAgent(KradleMinecraftAgent):
             json={
                 "model": self.memory.model,
                 "messages": messages
-            }
+            },
+            timeout=30
         ).json()
+
+        print(f"Response: {response}")
 
         if response["choices"]:
             content = response["choices"][0]["message"]["content"]
@@ -166,17 +185,14 @@ class LLMBasedAgent(KradleMinecraftAgent):
             content = "I'm sorry, I'm having trouble generating a response. Please try again later."
 
 
-        # logging the llm call
-        Kradle.create_log(
-            session_id=observation.session_id,
-            participant_id=observation.participant_id,
-            level="llm_response",
-            message= {
-                "prompt": messages,
-                "model": self.memory.model,
-                "response": content
-            }
-        )
+        # logging the llm call using the built in self.log() method
+        # self.log(
+        #     {
+        #         "prompt": messages,
+        #         "model": self.memory.model,
+        #         "response": content
+        #     }
+        # )
         
         self.memory.messages.extend([
             {"role": "user", "content": state_summary},
@@ -187,13 +203,7 @@ class LLMBasedAgent(KradleMinecraftAgent):
             return {"code": content, "delay": self.memory.DELAY_AFTER_ACTION}
         return {"command": content, "delay": self.memory.DELAY_AFTER_ACTION}
 
-# load the api key from the .env file
-load_dotenv()
-MY_API_KEY = os.getenv("KRADLE_API_KEY")
-# set the api key to your kradle api key
-Kradle.set_api_key(MY_API_KEY)
-
 # This creates a web server and is available through a SSH tunnel
-# the agent will be served at "/AGENT_SLUG"
-connection_info = Kradle.serve_agent(LLMBasedAgent, AGENT_SLUG)
+# the agent will be served at "/llm-agent"
+connection_info = AgentManager.serve(LLMBasedAgent, create_public_url=True)
 print(f"Started agent at URL: {connection_info}")
