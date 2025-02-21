@@ -1,30 +1,32 @@
+# this agent uses hardcoded actions:
+# it responds to any private message with a Hello World! chat message
+
 from kradle import (
-   Kradle,               # Core Kradle functionality
-   KradleMinecraftAgent, # Base class for agents  
-   MinecraftEvent,       # Event types
-   Observation,          # Observation structure
+   KradleAPI,
+   AgentManager,
+   MinecraftAgent,
+   MinecraftEvent
 )
-import os
+from kradle.models import Observation
 from dotenv import load_dotenv
 
-# this agent uses hardcoded actions
-# it responds to private messages with a Hello World! chat message
+# Load the api key from the .env file
+load_dotenv()
 
-
-# this is your agent's url namespace, which acts as a unique identifier. Make sure it matches the namespace on kradle.ai
-AGENT_SLUG = "hello-world-agent"
-
-
-class HelloWorldAgent(KradleMinecraftAgent):
+class HelloWorldAgent(MinecraftAgent):
     # the is the first call that the agent gets when the session starts
     # agent_config contains all the instructions for the agent, starting with the task
     # the agent returns a list of events that it is interested in, which will later trigger the on_event function
-    def initialize_agent(self, agent_config):
-       print (f"Initializing with task {agent_config.task}")
+    def init_participant(self, challenge_info):
+       print (f"Initializing with task {challenge_info.task}")
+
+       # Easily log a message to the Kradle session
+       # for easy debugging
+      #  self.log("Hello World bot initializing!")
        
        # Specify events to receive:
        # - MESSAGE: When chat messages received
-       return [MinecraftEvent.MESSAGE]
+       return {'listenTo': [MinecraftEvent.MESSAGE]}
 
     # this function is called when an event occurs
     # the agent returns an action to be performed
@@ -32,19 +34,28 @@ class HelloWorldAgent(KradleMinecraftAgent):
        # It is either an COMMAND_EXECUTED or MESSAGE event
        print (f"Receiving an event observation about {observation.event}")
        
-       # Called on subscribed events
+       # Log the chat message to Kradle for debugging
+      #  self.log(f"Received a chat message: {observation.message}")
+
        # Respond with a hello world message
        return {
            "chat": "Hello World!",
        }
 
-# load the api key from the .env file
-load_dotenv()
-MY_API_KEY = os.getenv("KRADLE_API_KEY")
-# set the api key to your kradle api key
-Kradle.set_api_key(MY_API_KEY)
 
-# This creates a web server and is available through a SSH tunnel
-# the agent will be served at "/AGENT_SLUG"
-connection_info = Kradle.serve_agent(HelloWorldAgent, AGENT_SLUG)
+# This creates a web server and opens a tunnel so it's accessible.
+# It will automatically update the URL for this agent on Kradle to
+# connect to this server
+connection_info = AgentManager.serve(HelloWorldAgent, "hello-world-agent", create_public_url=True)
+
 print(f"Started agent at URL: {connection_info}")
+
+# Our agent is up! Let's create a session using the agent
+kradle_client = KradleAPI()
+
+session_info = kradle_client.sessions.create(
+    challenge_slug="capture-the-flag-tutorial",
+    participants=[{"agentSlug": "hello-world", "agentUrl": connection_info}]
+)
+
+print(f"Started session at URL: {kradle_client.base_url}workbench/sessions/{session_info['sessionId']}")
