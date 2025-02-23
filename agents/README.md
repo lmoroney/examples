@@ -1,4 +1,4 @@
-# Sample Agents
+# Example Agents
 
 This directory has a number of example agents for Kradle. Download and run any of these examples to bootstrap your agent.
 
