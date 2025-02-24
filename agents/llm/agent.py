@@ -22,7 +22,7 @@ load_dotenv()
 
 # let's define a model and persona for our agent
 MODEL = "openai/gpt-4o" # refer to https://openrouter.ai/models for available models
-PERSONA = "you are a helpful assistant" # check out some other personas in prompts/config.py
+PERSONA = "you are a cool resourceful agent. you really want to achieve the task that has been given to you." # check out some other personas in prompts/config.py
 
 # plus some additional settings:
 
