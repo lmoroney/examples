@@ -66,27 +66,17 @@ class LLMBasedAgent(MinecraftAgent):
         self.memory.commands = challenge_info.commands
         self.memory.js_functions = challenge_info.js_functions
 
-        #set persona ad models
-        self.memory.persona = PERSONA
-        self.memory.model = MODEL
-
-        #decide we will respond with code. if set to true, the agent will respond with javascript code. if set to false, the agent will respond with a command
-        self.memory.RESPOND_WITH_CODE = RESPOND_WITH_CODE
-
-        #minimal delay after an action is performed. increase this if the agent is too fast or if you want more time to see the agent's actions
-        self.memory.DELAY_AFTER_ACTION = DELAY_AFTER_ACTION
-
         print(f"Initializing agent for participant ID: {self.participant_id} with slug: {self.username}")
-        print(f"Persona: {self.memory.persona}")
-        print(f"Model: {self.memory.model}")
+        print(f"Persona: {PERSONA}")
+        print(f"Model: {MODEL}")
 
         # let's log the init call to kradle using the
         # built in self.log() method from the MinecraftAgent class
         # self.log(
         #     {
-        #         "persona": self.memory.persona,
-        #         "model": self.memory.model,
-        #         "respond_with_code": self.memory.RESPOND_WITH_CODE
+        #         "persona": PERSONA,
+        #         "model": MODEL,
+        #         "respond_with_code": RESPOND_WITH_CODE
         #     }
         # )
     
@@ -134,7 +124,7 @@ class LLMBasedAgent(MinecraftAgent):
 
     # this function builds the system prompt for the agent
     def format_system_prompt(self, observation):
-        if self.memory.RESPOND_WITH_CODE:
+        if RESPOND_WITH_CODE:
             prompt = coding_prompt
         else:
             prompt = conversing_prompt
@@ -142,10 +132,10 @@ class LLMBasedAgent(MinecraftAgent):
         #load task, persona, agent_modes, and commands from memory to build the prompt
         prompt = prompt.replace("$NAME", observation.name)
         prompt = prompt.replace("$TASK", self.memory.task)
-        prompt = prompt.replace("$PERSONA", self.memory.persona)
+        prompt = prompt.replace("$PERSONA", PERSONA)
         prompt = prompt.replace("$AGENT_MODE", str(self.memory.agent_modes))
 
-        if self.memory.RESPOND_WITH_CODE:    
+        if RESPOND_WITH_CODE:    
             prompt = prompt.replace("$CODE_DOCS", str(self.memory.js_functions))
             prompt = prompt.replace("$EXAMPLES", str(coding_examples))
         else:
@@ -171,7 +161,7 @@ class LLMBasedAgent(MinecraftAgent):
             "https://openrouter.ai/api/v1/chat/completions",
             headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
             json={
-                "model": self.memory.model,
+                "model": MODEL,
                 "messages": messages
             },
             timeout=30
@@ -199,9 +189,9 @@ class LLMBasedAgent(MinecraftAgent):
             {"role": "assistant", "content": content}
         ])
 
-        if self.memory.RESPOND_WITH_CODE:
-            return {"code": content, "delay": self.memory.DELAY_AFTER_ACTION}
-        return {"command": content, "delay": self.memory.DELAY_AFTER_ACTION}
+        if RESPOND_WITH_CODE:
+            return {"code": content, "delay": DELAY_AFTER_ACTION}
+        return {"command": content, "delay": DELAY_AFTER_ACTION}
 
 # This creates a web server and is available through a SSH tunnel
 # the agent will be served at "/llm-agent"
