@@ -53,15 +53,6 @@ class HelloWorldAgent(MinecraftAgent):
 # It will automatically update the URL for this agent on Kradle to
 # connect to this server
 connection_info = AgentManager.serve(HelloWorldAgent, create_public_url=True)
-
 print(f"Started agent at URL: {connection_info}")
 
-# Our agent is up! Let's create a session using the agent
-kradle_client = KradleAPI()
-
-session_info = kradle_client.sessions.create(
-    challenge_slug="capture-the-flag-tutorial",
-    participants=[{"agentSlug": "hello-world", "agentUrl": connection_info}]
-)
-
-print(f"Started session at URL: {kradle_client.base_url}workbench/sessions/{session_info['sessionId']}")
+# now go to app.kradle.ai and run this agent against a challenge

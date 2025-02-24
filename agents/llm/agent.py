@@ -197,3 +197,5 @@ class LLMBasedAgent(MinecraftAgent):
 # the agent will be served at "/llm-agent"
 connection_info = AgentManager.serve(LLMBasedAgent, create_public_url=True)
 print(f"Started agent at URL: {connection_info}")
+
+# now go to app.kradle.ai and run this agent against a challenge
