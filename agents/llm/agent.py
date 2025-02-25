@@ -113,7 +113,8 @@ class LLMBasedAgent(MinecraftAgent):
     def format_observation(self, observation):
 
         # python array operation to extend/append to the in-game chat history
-        self.memory.game_chat_history.extend(observation.chat_messages)
+        if hasattr(observation, "chat_messages") and observation.chat_messages:
+            self.memory.game_chat_history.extend(observation.chat_messages)
 
         print(f"Minecraft Chat History: {self.memory.game_chat_history}")
 
