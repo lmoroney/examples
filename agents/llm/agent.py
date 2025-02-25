@@ -54,6 +54,8 @@ class LLMBasedAgent(MinecraftAgent):
         # it persists across the lifecycle of this participant.
         # It is an instance of the StandardMemory class in the Kradle SDK
 
+        print(f"Received init_participant call for {self.participant_id} with task: {challenge_info.task}")
+
         # save the task to memory
         self.memory.task = challenge_info.task
 
@@ -91,6 +93,8 @@ class LLMBasedAgent(MinecraftAgent):
     # we return our next action
     def on_event(self, observation):
 
+        print(f"Received on_event call for {self.participant_id} with event: {observation.event} task: {self.memory.task}")
+
         # lets format to observation, so we can pass it to the LLM
         state_summary = self.format_state_summary(observation)
         print(f"\nState Summary:\n{state_summary}")
@@ -127,6 +131,7 @@ class LLMBasedAgent(MinecraftAgent):
 
         # return a string with everything the LLM needs to know
         return (
+            f"Event received: {observation.event if observation.event else 'None'}\n\n"
             f"{observation.output if observation.output else 'Output: None'}\n\n"
             f"Chat: {chat_summary}\n\n"
             f"Visible Players: {', '.join(observation.players) if observation.players else 'None'}\n\n"
