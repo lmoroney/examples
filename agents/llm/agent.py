@@ -59,11 +59,11 @@ class LLMBasedAgent(MinecraftAgent):
         # save the task to memory
         self.memory.task = challenge_info.task
 
-        # array to store LLM history
-        self.memory.messages = []
+        # array to store LLM interaction history
+        self.memory.llm_transcript = []
 
         # array to store in-game chat history
-        self.memory.chat_history = []
+        self.memory.game_chat_history = []
 
         # set Minecraft modes (e.g. creative mode, self_preservation, etc)
         # TODO: Link to docs to explain more.
@@ -93,32 +93,34 @@ class LLMBasedAgent(MinecraftAgent):
     # we return our next action
     def on_event(self, observation):
 
-        print(f"Received on_event call for {self.participant_id} with event: {observation.event} task: {self.memory.task}")
+        print(
+            f"Received on_event call for {self.participant_id} with event: {observation.event} task: {self.memory.task}"
+        )
 
-        # lets format to observation, so we can pass it to the LLM
-        state_summary = self.format_state_summary(observation)
-        print(f"\nState Summary:\n{state_summary}")
+        # lets convert our observation to a string, so we can pass it to the LLM
+        observation_summary = self.format_observation(observation)
+        print(f"\nObservation Summary:\n{observation_summary}")
         print("Task: ", self.memory.task)
 
         # now we pass it to the LLM, get the next action, and send it to Kradle
-        response = self.get_llm_response(state_summary, observation)
+        response = self.get_llm_response(observation_summary, observation)
         print(f"Agent Response: {response}")
         print(f"Participant ID: {self.participant_id}")
 
         return response
 
-    # convert observation object => string, so we can build a LLM prompt
-    def format_state_summary(self, observation):
+    # convert observation from object => string, so we can build a LLM prompt
+    def format_observation(self, observation):
 
-        # python array operator to extend/append the next message
-        self.memory.chat_history.extend(observation.messages)
+        # python array operation to extend/append to the in-game chat history
+        self.memory.game_chat_history.extend(observation.chat_messages)
 
-        print(f"Messages: {self.memory.chat_history}")
+        print(f"Minecraft Chat History: {self.memory.game_chat_history}")
 
-        # lets get the last 10 messages
+        # lets get the last 10 in-game chat messages
         chat_summary = (
-            "\n".join(f"{msg.sender}: {msg.message}" for msg in self.memory.chat_history[-10:])
-            if self.memory.chat_history
+            "\n".join(f"{msg.sender}: {msg.chat_msg}" for msg in self.memory.game_chat_history[-10:])
+            if self.memory.game_chat_history
             else "None"
         )
 
@@ -141,7 +143,7 @@ class LLMBasedAgent(MinecraftAgent):
         )
 
     # this function builds the system prompt for the agent
-    def format_system_prompt(self, observation):
+    def build_system_prompt(self, observation):
         if RESPOND_WITH_CODE:
             prompt = coding_prompt
         else:
@@ -169,19 +171,19 @@ class LLMBasedAgent(MinecraftAgent):
         return prompt
 
     # send the prompt to the LLM and get the response
-    def get_llm_response(self, state_summary, observation):
+    def get_llm_response(self, observation_summary, observation):
 
-        # build the messages array with the last 5 messages
-        messages = [
-            {"role": "system", "content": self.format_system_prompt(observation)},
-            *self.memory.messages[-5:],
-            {"role": "user", "content": state_summary},
+        # prompt = system prompt + last 5 LLM interactions + last observation
+        llm_prompt = [
+            {"role": "system", "content": self.build_system_prompt(observation)},
+            *self.memory.llm_transcript[-5:],
+            {"role": "user", "content": observation_summary},
         ]
 
         response = requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
-            json={"model": MODEL, "messages": messages},
+            json={"model": MODEL, "messages": llm_prompt},
             timeout=30,
         ).json()
 
@@ -195,15 +197,15 @@ class LLMBasedAgent(MinecraftAgent):
         # logging what we sent and recieved to the Kradle dashboard
         # self.log(
         #     {
-        #         "prompt": messages,
-        #         "model": self.memory.model,
+        #         "prompt": llm_prompt,
+        #         "model": MODEL,
         #         "response": content
         #     }
         # )
 
         # append to the message history
-        self.memory.messages.extend(
-            [{"role": "user", "content": state_summary}, {"role": "assistant", "content": content}]
+        self.memory.llm_transcript.extend(
+            [{"role": "user", "content": observation_summary}, {"role": "assistant", "content": content}]
         )
 
         if RESPOND_WITH_CODE:
